@@ -43,6 +43,28 @@ start_of_number(char c)
 	}
 }
 
+int
+input_timeout (int filedes, unsigned int ms)
+{
+	int retvar;
+	fd_set set;
+	struct timeval timeout;
+
+	/* Initialize the file descriptor set. */
+	FD_ZERO (&set);
+	FD_SET (filedes, &set);
+
+	/* Initialize the timeout data structure. */
+	timeout.tv_sec = 0;
+	timeout.tv_usec = ms * 1000;
+
+	/* select returns 0 if timeout, 1 if input available, -1 if error. */
+	do {
+		retvar = select (FD_SETSIZE, &set, NULL, NULL,&timeout); 
+	} while (retvar == -1 && errno == EINTR);
+	return retvar;
+}
+
 uint32_t
 plot_file_input_read(struct plot_file_input *in, double *out, uint32_t out_max)
 {
@@ -64,7 +86,22 @@ plot_file_input_read(struct plot_file_input *in, double *out, uint32_t out_max)
 
 	assert(in->rem <= (in->buf_max - 1));
 
-	if (!(buflen = fread(&in->buf[in->rem], 1, (in->buf_max - 1) - in->rem, in->src))) {
+	buflen = 0;
+	do {
+		int available = input_timeout(fileno(in->src), 50);
+		if (available) {
+			int ch = fgetc(in->src);
+			in->buf[in->rem+buflen] = ch;
+			buflen++;
+			if ((in->flags & plot_file_input_flag_infinite) && !start_of_number(ch))
+				break;
+		}
+		else if (in->flags & plot_file_input_flag_infinite)
+			break;
+	} while (buflen < (in->buf_max - 1) - in->rem);
+
+	in->buf[in->rem+buflen] = 0;
+	if (!buflen) {
 		if (errno == EAGAIN || !errno) {
 			return 0;
 		} else {
