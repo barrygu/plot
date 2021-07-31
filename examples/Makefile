@@ -19,5 +19,12 @@ LIBNCURSES:=-lncurses
 simple_curses: simple_curses.o $(LIBS)
 	$(CC) -o $@ $(firstword $^) $(LINK_FLAGS) $(LIBNCURSES)
 
+-include simple.d simple_curses.d
+
+%.d: %.c
+	$(CC) -MM -MG $< $(CFLAGS) -I../include | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+
+depend: $(DEPS)
+
 clean:
-	rm -f *.o simple simple_curses
+	rm -f *.o *.d simple simple_curses
