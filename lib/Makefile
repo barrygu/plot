@@ -28,7 +28,9 @@ $(OBJS) $(DEPS): | $(OUTDIR)
 $(OUTDIR):
 	mkdir $(OUTDIR)
 
+ifneq ($(MAKECMDGOALS),clean)
 -include $(DEPS)
+endif
 
 $(OUTDIR)/%.d: %.c
 	$(CC) -MM -MG $< $(CFLAGS) -I../include | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@

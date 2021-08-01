@@ -19,7 +19,9 @@ LIBNCURSES:=-lncurses
 simple_curses: simple_curses.o $(LIBS)
 	$(CC) -o $@ $(firstword $^) $(LINK_FLAGS) $(LIBNCURSES)
 
+ifneq ($(MAKECMDGOALS),clean)
 -include simple.d simple_curses.d
+endif
 
 %.d: %.c
 	$(CC) -MM -MG $< $(CFLAGS) -I../include | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
