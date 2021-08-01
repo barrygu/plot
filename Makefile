@@ -7,10 +7,11 @@ all: $(SUBDIRS)
 
 .PHONY: $(SUBDIRS) $(SUBDIRS_C)
 
+cli examples: lib
 $(SUBDIRS):
-	make -C $@
+	$(MAKE) -C $@
 
 clean: $(SUBDIRS_CLEAN)
 
 $(SUBDIRS_CLEAN):
-	-make -C $(basename $@) clean
+	-$(MAKE) -C $(basename $@) clean

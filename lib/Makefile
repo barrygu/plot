@@ -13,19 +13,24 @@ SRCS = data_pipe.c \
 	util.c \
 	version.c
 
-OBJS = $(SRCS:.c=.o)
+OUTDIR := objs
+OBJS = $(patsubst %.c, $(OUTDIR)/%.o, $(SRCS))
 DEPS := $(OBJS:.o=.d)
 
-%.o: %.c
+$(OUTDIR)/%.o: %.c
 	$(CC) $(CFLAGS) -I../include -c $< -o $@
 
 libplot.a: $(OBJS)
 	$(AR) -crv $@ $^
 	$(RANLIB) $@
 
+$(OBJS) $(DEPS): | $(OUTDIR)
+$(OUTDIR):
+	mkdir $(OUTDIR)
+
 -include $(DEPS)
 
-%.d: %.c
+$(OUTDIR)/%.d: %.c
 	$(CC) -MM -MG $< $(CFLAGS) -I../include | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
 
 depend: $(DEPS)
@@ -34,4 +39,4 @@ version.c: version.c.in
 	sed "s/@version@/$(ver)/;s/@vcs_tag@/$(rev)/" $< > $@
 
 clean:
-	rm -f *.o *.d *.a version.c
+	rm -rf $(OUTDIR) *.a version.c
